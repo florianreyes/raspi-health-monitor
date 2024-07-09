@@ -6,13 +6,15 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.graphics import Color, Rectangle
 from kivy.clock import Clock
+from kivy.uix.gridlayout import GridLayout
 from threading import Thread
 from raspi_final import Pulsesensor
 from database import Schema
 
 class HeartbeatMeasurementApp(App):
     def build(self):
-        self.db = Schema("cliente") 
+        self.nombre_cliente = "German"
+        self.db = Schema(self.nombre_cliente) 
         self.sensor = Pulsesensor(channel=0)  # Replace with actual sensor channel
         self.stable_counter = 0
         self.stable_acum = 0 
@@ -21,27 +23,29 @@ class HeartbeatMeasurementApp(App):
         main_layout = BoxLayout(orientation='vertical', padding=[20, 20, 20, 20], spacing=20)
 
         with main_layout.canvas.before:
-            Color(0.07, 0.10, 0.26, 1)  # 131842
+            Color(1, 248/255, 243/255, 1)
             self.rect = Rectangle(size=(main_layout.size), pos=(main_layout.pos))
             main_layout.bind(size=self._update_rect, pos=self._update_rect)
 
         # Add a title
-        title_label = Label(text='Heartbeat Measurement Station', font_size=24, size_hint=(1, 0.2), color=(1, 1, 1, 1))
+        title_label = Label(text=f"{self.nombre_cliente}'s Heartbeat Measurement Station", font_size=24, size_hint=(1, 0.2), color=(0, 0, 0, 1))
         main_layout.add_widget(title_label)
 
         # Horizontal layout for buttons
         button_layout = BoxLayout(orientation='horizontal', spacing=20)
 
         # Button colors
-        button_color = [236/255, 206/255, 174/255, 1]  # ECCEAE
+        start_color = [117/255, 134/255, 148/255, 1]
+        visualize_color = [64/255, 93/255, 114/255, 1]
+          # ECCEAE
 
         read_pulse_button = Button(text='Start New Measurement', font_size=24, size_hint=(0.5, 1),
-                                   background_color=button_color)
+                                   background_color=start_color)
         read_pulse_button.bind(on_press=self.show_bpm_popup)
         button_layout.add_widget(read_pulse_button)
 
         query_data_button = Button(text='Visualize Last Measurements', font_size=24, size_hint=(0.5, 1),
-                                   background_color=button_color)
+                                   background_color=visualize_color)
         query_data_button.bind(on_press=self.query_data)
         button_layout.add_widget(query_data_button)
 
@@ -95,11 +99,23 @@ class HeartbeatMeasurementApp(App):
         Clock.unschedule(self.update_bpm_label)
 
     def query_data(self, instance):
-        print("Querying data...")
-        popup = Popup(title='Info',
-                      content=Label(text='Displaying last measurements.'),
-                      size_hint=(None, None), size=(400, 200))
+        data = self.db.query_data()
+        layout = GridLayout(cols=2, spacing=10, padding=10)
+
+        layout.add_widget(Label(text="Fecha", font_size=18))
+        layout.add_widget(Label(text="BPM", font_size=18))
+
+        for row in data:
+            bsastime = row[0] - 4*3600
+            human_time = time.ctime(bsastime)
+            layout.add_widget(Label(text=str(human_time), font_size=16))
+            layout.add_widget(Label(text=str(row[1]), font_size=16))
+
+        popup = Popup(title='Last Measurements',
+                      content=layout,
+                      size_hint=(None, None), size=(400, 400))
         popup.open()
+
 
     def _update_rect(self, instance, value):
         self.rect.size = instance.size

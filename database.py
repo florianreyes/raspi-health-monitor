@@ -34,7 +34,7 @@ class Schema:
 
     def query_data(self):
         connection, cursor = self.establish_connection()
-        cursor.execute("SELECT * FROM mediciones")
+        cursor.execute("SELECT * FROM mediciones ORDER BY fecha DESC LIMIT 10")
         rows = cursor.fetchall()
         self.close_connection(connection, cursor)
         return rows
