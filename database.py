@@ -1,41 +1,41 @@
 import sqlite3
 
+class Schema:
+    def __init__(self, nombre_cliente):
+        self.nombre_cliente = nombre_cliente
+        self.create_table()
 
-def establish_connection(nombre_cliente):
-    connection = sqlite3.connect(f"{nombre_cliente}-favaloro.db")
-    cursor = connection.cursor()
-    return connection, cursor
-
-
-def close_connection(connection, cursor):
-    cursor.close()
-    connection.close()
-
-
-def create_table(nombre_cliente):
-    connection, cursor = establish_connection(nombre_cliente)
-    cursor.execute(
-        "CREATE TABLE IF NOT EXISTS mediciones (fecha INTEGER primary key, BPM INTEGER)"
-    )
-    connection.commit()
-    close_connection(connection, cursor)
+    def establish_connection(self):
+        connection = sqlite3.connect(f"{self.nombre_cliente}-favaloro.db")
+        cursor = connection.cursor()
+        return connection, cursor
 
 
-def insert_medicion(fecha, BPM, nombre_cliente):
-    connection, cursor = establish_connection(nombre_cliente)
-    cursor.execute("INSERT INTO mediciones VALUES (?, ?)", (fecha, BPM))
-    connection.commit()
-    close_connection(connection, cursor)
+    def close_connection(self, connection, cursor):
+        cursor.close()
+        connection.close()
 
 
-def query_data():
-    connection, cursor = establish_connection("gonzo-floro")
-    cursor.execute("SELECT * FROM mediciones")
-    rows = cursor.fetchall()
-    close_connection(connection, cursor)
-    return rows
+    def create_table(self):
+        connection, cursor = self.establish_connection()
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS mediciones (fecha INTEGER primary key, BPM INTEGER)"
+        )
+        connection.commit()
+        self.close_connection(connection, cursor)
 
 
-if __name__ == "__main__":
-    # create_table("gonzo-floro")
-    print(query_data())
+    def insert_medicion(self, fecha, BPM):
+        connection, cursor = self.establish_connection()
+        cursor.execute("INSERT INTO mediciones VALUES (?, ?)", (fecha, BPM))
+        connection.commit()
+        self.close_connection(connection, cursor)
+
+
+    def query_data(self):
+        connection, cursor = self.establish_connection()
+        cursor.execute("SELECT * FROM mediciones")
+        rows = cursor.fetchall()
+        self.close_connection(connection, cursor)
+        return rows
+

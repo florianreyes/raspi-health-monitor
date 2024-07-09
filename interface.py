@@ -4,13 +4,22 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.graphics import Color, Rectangle
+from raspi_final import Pulsesensor
+import time
 
-def read_pulse(instance):
-    # Replace this function with your actual read_pulse() function
-    print("Reading pulse...")
+def get_pulse(instance):  
     popup = Popup(title='Info',
-                  content=Label(text='Pulse reading started.'),
+                  content=Label(text='Displaying last measurements.'),
                   size_hint=(None, None), size=(400, 200))
+    popup.open()      
+    sensor = Pulsesensor(channel=0)
+    sensor.startAsyncBPM()
+    try:
+        while True:
+            print(f"BPM: {sensor.BPM}")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        sensor.stopAsyncBPM()
     popup.open()
 
 def query_data(instance):
@@ -48,7 +57,7 @@ class HeartbeatMeasurementApp(App):
         
         read_pulse_button = Button(text='Start New Measurement', font_size=32, size_hint=(0.5, 1),
                                    background_color=start_color)
-        read_pulse_button.bind(on_press=read_pulse)
+        read_pulse_button.bind(on_press=get_pulse)
         button_layout.add_widget(read_pulse_button)
 
         query_data_button = Button(text='Visualize Last Measurements', font_size=32, size_hint=(0.5, 1),

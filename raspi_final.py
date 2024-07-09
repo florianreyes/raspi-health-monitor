@@ -6,7 +6,7 @@ import board
 import busio
 
 class Pulsesensor:
-    def __init__(self, channel=0, gain=1):
+    def __init__(self, channel=0, gain=2/3):
         self.channel = channel
         self.BPM = 0
         self.gain = gain
@@ -15,7 +15,7 @@ class Pulsesensor:
         self.chan = AnalogIn(self.ads, getattr(ADS, f'P{self.channel}'))
 
     def getBPMLoop(self):
-        rate = [0] * 10         # array to hold last 10 IBI values
+        rate = [60] * 10         # array to hold last 10 IBI values
         sampleCounter = 0       # used to determine pulse timing
         lastBeatTime = 0        # used to find IBI
         P = 512                 # used to find peak in pulse wave, seeded
@@ -31,6 +31,7 @@ class Pulsesensor:
         
         while not self.thread.stopped:
             Signal = self.chan.value
+            #print(Signal)
             currentTime = int(time.time()*1000)
             
             sampleCounter += currentTime - lastTime
@@ -67,7 +68,7 @@ class Pulsesensor:
                     runningTotal = sum(rate)            # add up oldest IBI values
 
                     runningTotal /= len(rate)           # average the IBI values 
-                    self.BPM = 60000/runningTotal       # how many beats can fit into a minute? that's BPM!
+                    self.BPM = (60000/runningTotal)       # how many beats can fit into a minute? that's BPM!
 
             if Signal < thresh and Pulse == True:       # when the values are going down, the beat is over
                 Pulse = False                           # reset the Pulse flag so we can do it again
@@ -98,13 +99,12 @@ class Pulsesensor:
         self.BPM = 0
         return
 
-# Example usage
-sensor = Pulsesensor(channel=0)
-sensor.startAsyncBPM()
-
-try:
-    while True:
-        print(f"BPM: {sensor.BPM}")
-        time.sleep(1)
-except KeyboardInterrupt:
-    sensor.stopAsyncBPM()
+def get_pulse():        
+    sensor = Pulsesensor(channel=0)
+    sensor.startAsyncBPM()
+    try:
+        while True:
+            yield(f"BPM: {sensor.BPM}")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        sensor.stopAsyncBPM()
