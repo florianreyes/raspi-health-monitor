@@ -56,7 +56,7 @@ class HeartbeatMeasurementApp(App):
     def show_bpm_popup(self, instance):
         self.sensor.startAsyncBPM()
 
-        self.bpm_label = Label(text=f'BPM: {self.final_bpm}', font_size=24)
+        self.bpm_label = Label(text=f'BPM: {round(self.final_bpm)}', font_size=24)
         self.bpm_popup = Popup(title='Real-time BPM',
                                content=self.bpm_label,
                                size_hint=(None, None), size=(400, 200))
@@ -76,12 +76,12 @@ class HeartbeatMeasurementApp(App):
         elif self.stable_counter == 4:
             self.final_bpm = self.stable_acum/self.stable_counter
             self.sensor.stopAsyncBPM()
-            self.bpm_label.text = f'Final BPM: {round(self.final_bpm)}'
+            self.bpm_label.text = f'Final BPM: {round((self.final_bpm)//2)}'
 
             # Get actual unix time
             unix_time = int(time.time())
 
-            self.db.insert_medicion(unix_time, int(self.final_bpm))
+            self.db.insert_medicion(unix_time, int(round((self.final_bpm)//2)))
             self.final_bpm, self.stable_acum, self.stable_counter = (0,0,0)
             print(self.db.query_data())
             Clock.unschedule(self.update_bpm_label)
