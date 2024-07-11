@@ -10,6 +10,8 @@ from kivy.uix.gridlayout import GridLayout
 from threading import Thread
 from raspi_final import Pulsesensor
 from database import Schema
+from telegram_send import TelegramBot
+
 
 class HeartbeatMeasurementApp(App):
     def build(self):
@@ -20,6 +22,7 @@ class HeartbeatMeasurementApp(App):
         self.stable_acum = 0 
         self.final_bpm = 0
         self.eps = 5
+        self.telegram_bot = TelegramBot()
         main_layout = BoxLayout(orientation='vertical', padding=[20, 20, 20, 20], spacing=20)
 
         with main_layout.canvas.before:
@@ -80,7 +83,7 @@ class HeartbeatMeasurementApp(App):
 
             # Get actual unix time
             unix_time = int(time.time())
-
+            self.telegram_bot.send_message(self.final_bpm)
             self.db.insert_medicion(unix_time, int(round((self.final_bpm)//2)))
             self.final_bpm, self.stable_acum, self.stable_counter = (0,0,0)
             print(self.db.query_data())
