@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import time
-from database import insert_medicion
 
 # Load the environment variables
 load_dotenv()
@@ -19,7 +18,7 @@ class TelegramBot:
     def __init__(self):
         self.bot = telegram.Bot(token=telegram_api_key)
 
-    async def send_message(heartbeats: int):
+    async def trigger_send_message(heartbeats: int):
         # Get the number of heartbeats
         # Get actual unix time
         unix_time = int(time.time())
