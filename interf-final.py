@@ -1,4 +1,5 @@
 import time
+import asyncio
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
@@ -65,43 +66,44 @@ class HeartbeatMeasurementApp(App):
                                content=self.bpm_label,
                                size_hint=(None, None), size=(400, 200))
 
-        self.bpm_popup.bind(on_dismiss=self.stop_bpm)
+        self.bpm_popup.bind(on_dismiss=self.on_bpm_popup_dismiss)
         self.bpm_popup.open()
 
         Clock.schedule_interval(self.update_bpm_label, 1)
 
+    def on_bpm_popup_dismiss(self, instance):
+        self.sensor.stopAsyncBPM()
+        Clock.unschedule(self.update_bpm_label)
+        Thread(target=self.send_telegram_message).start()
 
     def update_bpm_label(self, dt):
         print(self.stable_acum)
         print(self.stable_counter)
         if self.stable_counter == 0:
             self.stable_acum = self.sensor.BPM
-            self.stable_counter+=1
-        elif self.stable_counter == 4:
-            self.final_bpm = self.stable_acum/self.stable_counter
-            self.sensor.stopAsyncBPM()
-            self.bpm_label.text = f'Final BPM: {round((self.final_bpm)//2)}'
+            self.stable_counter += 1
+        elif self.stable_counter == 3:
+            self.final_bpm = self.stable_acum / self.stable_counter
+            self.bpm_label.text = f'Final BPM: {round(self.final_bpm // 2)}'
 
             # Get actual unix time
             unix_time = int(time.time())
-            self.telegram_bpm = int(round((self.final_bpm)//2))
-            self.db.insert_medicion(unix_time, int(round((self.final_bpm)//2)))
-            self.final_bpm, self.stable_acum, self.stable_counter = (0,0,0)
+            self.telegram_bpm = int(round(self.final_bpm // 2))
+            self.db.insert_medicion(unix_time, int(round(self.final_bpm // 2)))
+            self.final_bpm, self.stable_acum, self.stable_counter = (0, 0, 0)
             print(self.db.query_data())
             Clock.unschedule(self.update_bpm_label)
         else:
-            if abs((self.stable_acum/self.stable_counter)-self.sensor.BPM) < self.eps and self.sensor.BPM > 30:
-                self.stable_counter+=1
+            if abs((self.stable_acum / self.stable_counter) - self.sensor.BPM) < self.eps and self.sensor.BPM > 30:
+                self.stable_counter += 1
                 self.stable_acum += self.sensor.BPM
             else:
                 self.stable_acum = 0
                 self.stable_counter = 0
-            self.bpm_label.text = f'BPM: {round((self.sensor.BPM)//2)}'
+            self.bpm_label.text = f'BPM: {round(self.sensor.BPM // 2)}'
 
-    async def stop_bpm(self, instance):
-        await self.telegram_bot.trigger_send_message(self.telegram_bpm)
-        self.sensor.stopAsyncBPM()
-        Clock.unschedule(self.update_bpm_label)
+    def send_telegram_message(self):
+        asyncio.run(self.telegram_bot.trigger_send_message(self.telegram_bpm))
 
     def query_data(self, instance):
         data = self.db.query_data()
@@ -120,7 +122,6 @@ class HeartbeatMeasurementApp(App):
                       content=layout,
                       size_hint=(None, None), size=(400, 400))
         popup.open()
-
 
     def _update_rect(self, instance, value):
         self.rect.size = instance.size
